@@ -1,16 +1,16 @@
-Bidding Simulation Project using socket programming. <br>
+<b>Bidding Simulation Project using socket programming.</b> <br>
 //Must be ran in UNIX environment
 
 to compile server in bash: <br>
-gcc biddingServer.cpp -o server
+<b>gcc biddingServer.cpp -o server</b>
 
 to compile client in bash: <br>
-gcc biddingClient.cpp -o client
+<b>gcc biddingClient.cpp -o client</b>
 
 to run in bash:
 
 terminal 1 <br>
-./server
+<b>./server</b>
 
 terminal 2 <br>
-./client (IP or Computer username of server)
+<b>./client (IP or Computer username of server)</b>
