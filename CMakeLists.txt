@@ -3,4 +3,4 @@ project(biddingSim)
 
 set(CMAKE_CXX_STANDARD 11)
 
-add_executable(biddingSim main.cpp)
+add_executable(biddingSim main.cpp biddingServer.cpp biddingClient.cpp)
