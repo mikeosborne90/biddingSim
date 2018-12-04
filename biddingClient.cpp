@@ -58,6 +58,56 @@ int main(int argc, char *argv[])
 
     printf("Received: \n%s",buf);
 
+    int myPrice[1000];
+    int myUnits[1000];
+    int j = 0;
+    int counter1 = 0;
+    int counter2 = 0;
+
+    for(int i = 0; i <= numbytes; i++)
+    {
+        if(i != 0) //To prevent checking out of array bound at i = 0
+        {
+            if ((buf[i]=='0'||buf[i]=='1'||buf[i]=='2'||buf[i]=='3'||buf[i]=='4'||buf[i]=='5'||buf[i]=='6'||buf[i]=='7'||buf[i]=='8'||buf[i]=='9')&&buf[i-1]=='\t')
+            {
+                char value[10];
+                int x = 0;
+                int y = i;
+                while (buf[y] != '\t')
+                {
+                    value[x] = buf[y];
+                    x++;
+                    y++;
+                }
+
+                if(j % 2 == 0)
+                {
+                    myUnits[counter1] = atoi(value);
+                    counter1++;
+                }
+                else
+                {
+                    myPrice[counter2] = atoi(value);
+                    counter2++;
+                }
+
+                for (int a = 0; a < 10; a++) //zero out value
+                {
+                    value[a] = 0;
+                }
+                j++;
+            }
+        }
+
+    }
+
+    for(int i = 0; i < (counter1); i++)
+    {
+        printf("%i,", myUnits[i]);
+        printf(" %i", myPrice[i]);
+        printf("\n");
+    }
+
     close(sockfd);
 
     return 0;
