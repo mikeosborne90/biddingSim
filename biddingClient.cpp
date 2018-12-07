@@ -7,10 +7,14 @@
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
+#include <sstream>
 #include <netdb.h>
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include "itemList.h" //Structure for input.txt
+#include <iostream>
+#include <vector>
 
 #define PORT 3499 // the port client will be connecting to
 
@@ -21,7 +25,7 @@ int main(int argc, char *argv[])
     int sockfd, numbytes;
     char buf[MAXDATASIZE];
     struct hostent *he;
-    struct sockaddr_in their_addr; // connector's address information
+    struct sockaddr_in _addr; // connector's address information
 
     if (argc != 2) {
         fprintf(stderr,"usage: client hostname\n");
@@ -38,12 +42,12 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    their_addr.sin_family = AF_INET;    // host byte order
-    their_addr.sin_port = htons(PORT);  // short, network byte order
-    their_addr.sin_addr = *((struct in_addr *)he->h_addr);
-    memset(&(their_addr.sin_zero), '\0', 8);  // zero the rest of the struct
+    _addr.sin_family = AF_INET;    // host byte order
+    _addr.sin_port = htons(PORT);  // short, network byte order
+    _addr.sin_addr = *((struct in_addr *)he->h_addr);
+    memset(&(_addr.sin_zero), '\0', 8);  // zero the rest of the struct
 
-    if (connect(sockfd, (struct sockaddr *)&their_addr,
+    if (connect(sockfd, (struct sockaddr *)&_addr,
                 sizeof(struct sockaddr)) == -1) {
         perror("connect");
         exit(1);
@@ -56,8 +60,28 @@ int main(int argc, char *argv[])
 
     buf[numbytes] = '\0';
 
-    printf("Received: \n%s",buf);
+    std::stringstream aLine;  //For the line
+    aLine<<buf;               //Bytes of data from the buffer into the string stream object
 
+    //printf("Received: \n%s",aLine.str().c_str()); // Printing what we have stored in the stringstream(commented out for testing)
+    std::vector<itemList> biddingList;
+    itemList tempElement;
+    std::string temp;         //For the line to cut up and store into our Struct
+    std::getline(aLine,temp); // Skip the first line, to ignore Description, Units, Price
+    while(aLine>>temp){
+      tempElement.itemName = temp;          //Store the first part of line, Description as name
+      aLine>>temp;                          //Skip over tabs, store new data in Temp(The units now)
+      tempElement.numUnits = stoi(temp);    //Store the second part of line, Units
+      aLine>>temp;                          //Skip over tabs, store new data in temp(The price now)
+      tempElement.unitPrice = stoi(temp);   //Store the price of each unit, don't get next because that starts next line
+      biddingList.push_back(tempElement);   //Store element into our vector of itemList
+    }
+    //This forloop shows how to iterate through the vector and access each member of the structure
+    //Should make it easier to broadcast itemName, edit the number of units and price
+    for(int i = 0; i < biddingList.size();i++){ //Print the vector to see that it saves right
+      std::cout << biddingList.at(i).itemName << " " << biddingList.at(i).numUnits << " " << biddingList.at(i).unitPrice << std::endl;
+    }
+/*
     int myPrice[1000];
     int myUnits[1000];
     int j = 0;
@@ -107,7 +131,7 @@ int main(int argc, char *argv[])
         printf(" %i", myPrice[i]);
         printf("\n");
     }
-
+*/
     close(sockfd);
 
     return 0;
