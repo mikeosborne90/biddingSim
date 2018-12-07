@@ -1,11 +1,14 @@
 <b>Bidding Simulation Project using socket programming.</b> <br>
 //Must be ran in UNIX environment
 
+to compile itemList.h in bash: <br>
+<b>g++ itemList.h</b>
+
 to compile server in bash: <br>
-<b>gcc biddingServer.cpp -o server</b>
+<b>g++ biddingServer.cpp -o server</b>
 
 to compile client in bash: <br>
-<b>gcc biddingClient.cpp -o client</b>
+<b>g++ biddingClient.cpp -o client</b>
 
 to run in bash:
 
