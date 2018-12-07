@@ -14,3 +14,5 @@ terminal 1 <br>
 
 terminal 2 <br>
 <b>./client (IP or Computer username of server)</b>
+
+<img src="https://cdn.discordapp.com/attachments/506644007515062272/520451868506193933/biddingSim.jpeg"/>
