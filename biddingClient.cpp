@@ -1,7 +1,3 @@
-/*
-** client.c -- a stream socket client demo
-*/
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -15,6 +11,7 @@
 #include "itemList.h" //Structure for input.txt
 #include <iostream>
 #include <vector>
+#include <time.h>
 
 #define PORT 3499 // the port client will be connecting to
 
@@ -26,6 +23,8 @@ int main(int argc, char *argv[])
     char buf[MAXDATASIZE];
     struct hostent *he;
     struct sockaddr_in _addr; // connector's address information
+    srand (time(NULL));
+    std::string itemWithPrice;         //stores item name, and unitPrice
 
     if (argc != 2) {
         fprintf(stderr,"usage: client hostname\n");
@@ -64,74 +63,59 @@ int main(int argc, char *argv[])
     aLine<<buf;               //Bytes of data from the buffer into the string stream object
 
     //printf("Received: \n%s",aLine.str().c_str()); // Printing what we have stored in the stringstream(commented out for testing)
-    std::vector<itemList> biddingList;
+    std::vector<itemList> biddingListClient;
     itemList tempElement;
     std::string temp;         //For the line to cut up and store into our Struct
     std::getline(aLine,temp); // Skip the first line, to ignore Description, Units, Price
     while(aLine>>temp){
       tempElement.itemName = temp;          //Store the first part of line, Description as name
       aLine>>temp;                          //Skip over tabs, store new data in Temp(The units now)
-      tempElement.numUnits = stoi(temp);    //Store the second part of line, Units
-      aLine>>temp;                          //Skip over tabs, store new data in temp(The price now)
       tempElement.unitPrice = stoi(temp);   //Store the price of each unit, don't get next because that starts next line
-      biddingList.push_back(tempElement);   //Store element into our vector of itemList
+      biddingListClient.push_back(tempElement);   //Store element into our vector of itemList
     }
     //This forloop shows how to iterate through the vector and access each member of the structure
     //Should make it easier to broadcast itemName, edit the number of units and price
-    for(int i = 0; i < biddingList.size();i++){ //Print the vector to see that it saves right
-      std::cout << biddingList.at(i).itemName << " " << biddingList.at(i).numUnits << " " << biddingList.at(i).unitPrice << std::endl;
+    for(int i = 0; i < biddingListClient.size();i++){ //Print the vector to see that it saves right
+      std::cout << biddingListClient.at(i).itemName << " " << biddingListClient.at(i).unitPrice << std::endl;
     }
-/*
-    int myPrice[1000];
-    int myUnits[1000];
-    int j = 0;
-    int counter1 = 0;
-    int counter2 = 0;
 
-    for(int i = 0; i <= numbytes; i++)
+    int randomItem = rand() % 10; //Need to change once item list gets reduced in size
+    int notBidChance = rand() % 100;
+    char sendBuffer[MAXDATASIZE];
+
+    if(notBidChance >= 30)                                       //70% chance to bid
     {
-        if(i != 0) //To prevent checking out of array bound at i = 0
+        for (int i = 0; i < biddingListClient.size(); i++)
         {
-            if ((buf[i]=='0'||buf[i]=='1'||buf[i]=='2'||buf[i]=='3'||buf[i]=='4'||buf[i]=='5'||buf[i]=='6'||buf[i]=='7'||buf[i]=='8'||buf[i]=='9')&&buf[i-1]=='\t')
-            {
-                char value[10];
-                int x = 0;
-                int y = i;
-                while (buf[y] != '\t')
-                {
-                    value[x] = buf[y];
-                    x++;
-                    y++;
-                }
 
-                if(j % 2 == 0)
-                {
-                    myUnits[counter1] = atoi(value);
-                    counter1++;
-                }
-                else
-                {
-                    myPrice[counter2] = atoi(value);
-                    counter2++;
-                }
-
-                for (int a = 0; a < 10; a++) //zero out value
-                {
-                    value[a] = 0;
-                }
-                j++;
+            if (randomItem == i)                            //randomly add one item to list
+            {                                               //increase unitPrice by $1
+                itemWithPrice.append(
+                        biddingListClient.at(i).itemName + " " +
+                        std::to_string(biddingListClient.at(i).unitPrice + 1) +
+                        "\n");
+                std::cout<<"Bid on "<<biddingListClient.at(i).itemName<<" "<<biddingListClient.at(i).unitPrice + 1<<std::endl;
             }
-        }
-
+    }
+    }
+    else {                                                      //30% chance to not bid
+        std::cout << "Did not bid this round!" << std::endl;
     }
 
-    for(int i = 0; i < (counter1); i++)
+    for(int i = 0; i < itemWithPrice.length(); i++)
     {
-        printf("%i,", myUnits[i]);
-        printf(" %i", myPrice[i]);
-        printf("\n");
+        sendBuffer[i] = itemWithPrice[i];
     }
-*/
+//Trying to send back to server
+    if(numbytes == 0)
+    {
+        std::cout<<"ERROR: No items found on for client."<<std::endl;
+        exit(1);
+    }
+
+    if (send(sockfd, sendBuffer, itemWithPrice.length(), 0) == -1)
+        perror("send");
+
     close(sockfd);
 
     return 0;
