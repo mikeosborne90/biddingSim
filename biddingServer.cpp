@@ -13,6 +13,7 @@
 #include <iostream>
 #include <vector>
 #include <sstream>
+#include <fstream>
 
 #define MYPORT 3499    // the port users will be connecting to
 
@@ -35,53 +36,6 @@ int main(void)
     int yes=1;
     std::vector<itemList> biddingListServer; //stores item name, #ofunits, unitPrice, and maxUnitPrice
     std::string itemWithPrice;         //stores item name, and unitPrice
-
-    //Read initial input.txt and save in itemList struct
-    char const *fileName = "input.txt";
-    char buffer[LENGTH];
-    FILE *fileStream = fopen(fileName, "r");
-    if(fileStream == NULL)
-    {
-        fprintf(stderr, "ERROR: File %s not found. (errno = %d)\n", fileName, errno);
-        exit(1);
-    }
-    bzero(buffer, LENGTH);
-    int fsBlockSize;
-
-    while((fsBlockSize = fread(buffer, sizeof(char), LENGTH, fileStream))>0)
-    {
-        std::stringstream aLine;  //For the line
-        aLine<<buffer;               //Bytes of data from the buffer into the string stream object
-
-        //printf("Received: \n%s",aLine.str().c_str()); // Printing what we have stored in the stringstream(commented out for testing)
-        itemList tempElement;
-        std::string temp;         //For the line to cut up and store into our Struct
-        std::getline(aLine,temp); // Skip the first line, to ignore Description, Units, Price
-        while(aLine>>temp){
-            tempElement.itemName = temp;          //Store the first part of line, Description as name
-            aLine>>temp;                          //Skip over tabs, store new data in Temp(The units now)
-            tempElement.numUnits = stoi(temp);    //Store the second part of line, Units
-            tempElement.unitPrice = 1;            //Set initial unit price to $1 for each item
-            aLine>>temp;                          //Skip over tabs, store new data in temp(The price now)
-            tempElement.maxUnitPrice = stoi(temp);   //Store the (MAX) price of each unit, don't get next because that starts next line
-            biddingListServer.push_back(tempElement);   //Store element into our vector of itemList
-        }
-        //This forloop shows how to iterate through the vector and access each member of the structure
-        //Should make it easier to broadcast itemName, edit the number of units and price
-        std::cout<<"Initial Server Item Info: "<<std::endl;
-        std::cout<<"------------------------"<<std::endl;
-        for(int i = 0; i < biddingListServer.size();i++){ //Print the vector to see that it saves right
-            std::cout << biddingListServer.at(i).itemName << " " << biddingListServer.at(i).numUnits << " " << biddingListServer.at(i).unitPrice<< " " << biddingListServer.at(i).maxUnitPrice << std::endl;
-            itemWithPrice.append(biddingListServer.at(i).itemName + " " + std::to_string(biddingListServer.at(i).unitPrice) + "\n");
-        }
-//for testing
-//        for(int i = 0; i < itemWithPrice.length(); i++)
-//        {
-//            std::cout<<itemWithPrice[i];
-//        }
-
-        bzero(buffer, LENGTH);
-    }
 
     //Establish connection with incoming client
     if ((sockfd = socket(PF_INET, SOCK_STREAM, 0)) == -1) {
@@ -119,6 +73,56 @@ int main(void)
     }
 
     while(1) {  // main accept() loop
+
+        //Read initial input.txt and save in itemList struct
+        char const *fileName = "biddingList.txt";
+        char buffer[LENGTH];
+        FILE *fileStream = fopen(fileName, "r");
+        if(fileStream == NULL)
+        {
+            fprintf(stderr, "ERROR: File %s not found. (errno = %d)\n", fileName, errno);
+            exit(1);
+        }
+        bzero(buffer, LENGTH);
+        int fsBlockSize;
+
+        biddingListServer.clear();
+        itemWithPrice = "";
+
+        while((fsBlockSize = fread(buffer, sizeof(char), LENGTH, fileStream))>0)
+        {
+            std::stringstream aLine;  //For the line
+            aLine<<buffer;               //Bytes of data from the buffer into the string stream object
+
+            //printf("Received: \n%s",aLine.str().c_str()); // Printing what we have stored in the stringstream(commented out for testing)
+            itemList tempElement;
+            std::string temp;         //For the line to cut up and store into our Struct
+            //std::getline(aLine,temp); // Skip the first line, to ignore Description, Units, Price
+            while(aLine>>temp){
+                tempElement.itemName = temp;          //Store the first part of line, Description as name
+                aLine>>temp;                          //Skip over tabs, store new data in Temp(The units now)
+                tempElement.numUnits = stoi(temp);    //Store the second part of line, Units
+                aLine>>temp;
+                tempElement.unitPrice = stoi(temp);            //Set initial unit price to $1 for each item
+                aLine>>temp;                          //Skip over tabs, store new data in temp(The price now)
+                tempElement.maxUnitPrice = stoi(temp);   //Store the (MAX) price of each unit, don't get next because that starts next line
+                biddingListServer.push_back(tempElement);   //Store element into our vector of itemList
+            }
+            //This forloop shows how to iterate through the vector and access each member of the structure
+            //Should make it easier to broadcast itemName, edit the number of units and price
+            for(int i = 0; i < biddingListServer.size();i++){ //Print the vector to see that it saves right
+                //std::cout << biddingListServer.at(i).itemName << " " << biddingListServer.at(i).numUnits << " " << biddingListServer.at(i).unitPrice<< " " << biddingListServer.at(i).maxUnitPrice << std::endl;
+                itemWithPrice.append(biddingListServer.at(i).itemName + " " + std::to_string(biddingListServer.at(i).unitPrice) + "\n");
+            }
+//for testing
+//        for(int i = 0; i < itemWithPrice.length(); i++)
+//        {
+//            std::cout<<itemWithPrice[i];
+//        }
+
+            bzero(buffer, LENGTH);
+        }
+
         sin_size = sizeof(struct sockaddr_in);
         if ((new_fd = accept(sockfd, (struct sockaddr *)&their_addr,
                              &sin_size)) == -1) {
@@ -161,10 +165,40 @@ int main(void)
 
             buf[numbytes] = '\0';
 
-            for(int i = 0; i < numbytes; i++)
-            {
-                std::cout<<buf[i];
+            std::stringstream aLine;  //For the line
+            aLine<<buf;               //Bytes of data from the buffer into the string stream object
+
+            std::string temp;         //For the line to cut up and store into our Struct
+            while(aLine>>temp){
+                for(int i = 0; i < biddingListServer.size();i++)
+                {
+                    if(temp == biddingListServer.at(i).itemName)
+                    {
+                        aLine>>temp;
+                        biddingListServer.at(i).unitPrice = stoi(temp);
+                    }
+                }
             }
+
+//            for(int i = 0; i < numbytes; i++)
+//            {
+//                std::cout<<buf[i];
+//            }
+            std::ofstream out("biddingList.txt", std::ios::out);
+
+            if( !out )
+            {
+                std::cout << "Couldn't open file."  << std::endl;
+                return 1;
+            }
+
+            for(int i = 0; i < biddingListServer.size();i++){ //Print the vector to see that it saves right
+                out << biddingListServer.at(i).itemName << " " << biddingListServer.at(i).numUnits << " " << biddingListServer.at(i).unitPrice<< " " << biddingListServer.at(i).maxUnitPrice << std::endl;
+                std::cout << biddingListServer.at(i).itemName << " " << biddingListServer.at(i).numUnits << " " << biddingListServer.at(i).unitPrice<< " " << biddingListServer.at(i).maxUnitPrice << std::endl;
+                itemWithPrice.append(biddingListServer.at(i).itemName + " " + std::to_string(biddingListServer.at(i).unitPrice) + "\n");
+            }
+
+            out.close();
 
             close(new_fd);
             exit(0);

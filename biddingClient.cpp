@@ -66,7 +66,6 @@ int main(int argc, char *argv[])
     std::vector<itemList> biddingListClient;
     itemList tempElement;
     std::string temp;         //For the line to cut up and store into our Struct
-    std::getline(aLine,temp); // Skip the first line, to ignore Description, Units, Price
     while(aLine>>temp){
       tempElement.itemName = temp;          //Store the first part of line, Description as name
       aLine>>temp;                          //Skip over tabs, store new data in Temp(The units now)
