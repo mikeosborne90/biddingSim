@@ -24,7 +24,6 @@ int main(int argc, char *argv[])
     struct hostent *he;
     struct sockaddr_in _addr; // connector's address information
     srand (time(NULL));
-    std::string itemWithPrice;         //stores item name, and unitPrice
 
     if (argc != 2) {
         fprintf(stderr,"usage: client hostname\n");
@@ -58,12 +57,14 @@ int main(int argc, char *argv[])
     }
 
     buf[numbytes] = '\0';
+    std::string itemWithPrice;         //stores item name, and unitPrice
 
     std::stringstream aLine;  //For the line
     aLine<<buf;               //Bytes of data from the buffer into the string stream object
 
     //printf("Received: \n%s",aLine.str().c_str()); // Printing what we have stored in the stringstream(commented out for testing)
     std::vector<itemList> biddingListClient;
+    biddingListClient.clear();
     itemList tempElement;
     std::string temp;         //For the line to cut up and store into our Struct
     while(aLine>>temp){
