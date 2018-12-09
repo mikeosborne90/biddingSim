@@ -14,12 +14,18 @@
 #include <vector>
 #include <sstream>
 #include <fstream>
+#include <csignal>
 
 #define MYPORT 3499    // the port users will be connecting to
 
 #define BACKLOG 10     // how many pending connections queue will hold
 
 #define LENGTH 256
+
+#define SESSION_TIMER 60     //in seconds
+
+std::sig_atomic_t volatile done = 0;
+void sessionOver(int) { done = 1; }
 
 void sigchld_handler(int s)
 {
@@ -28,6 +34,9 @@ void sigchld_handler(int s)
 
 int main(int argc, char * argv[])
 {
+    std::signal(SIGALRM, sessionOver);
+    alarm(SESSION_TIMER); // 1 minute timer for session
+
     int sockfd, new_fd;  // listen on sock_fd, new connection on new_fd
     struct sockaddr_in my_addr;    // my address information
     struct sockaddr_in their_addr; // connector's address information
@@ -116,6 +125,7 @@ int main(int argc, char * argv[])
         exit(1);
     }
 
+
     while(1) {  // main accept() loop
         sin_size = sizeof(struct sockaddr_in);
         if ((new_fd = accept(sockfd, (struct sockaddr *)&their_addr,
@@ -151,8 +161,58 @@ int main(int argc, char * argv[])
             bzero(sendBuffer, itemWithPriceLength);
 
             close(new_fd);
+
             exit(0);
         }
+        else                //I am a parent
+            {
+                bool allItemsGone = true;
+                for(int i = 0; i < biddingListServer.size();i++)
+                {
+                    if(biddingListServer.at(i).isAvailable)
+                    {
+                        allItemsGone = false;
+                    }
+                }
+
+                if(done == 1 || allItemsGone)
+                {
+                    for(int i = 0; i < biddingListServer.size();i++)  //reset prices to $1
+                    {
+
+                        if(biddingListServer.at(i).isAvailable)
+                        {
+                            biddingListServer.at(i).numUnits -= 1;
+
+                            //increase client wins by 1
+                            if(biddingListServer.at(i).currentWinner == 1)
+                            {
+                                biddingListServer.at(i).client1Wins += 1;
+                            }
+                            else if(biddingListServer.at(i).currentWinner == 2)
+                            {
+                                biddingListServer.at(i).client2Wins += 1;
+                            }
+                            else if(biddingListServer.at(i).currentWinner == 3)
+                            {
+                                biddingListServer.at(i).client2Wins += 1;
+                            }
+                            else if(biddingListServer.at(i).currentWinner == 4)
+                            {
+                                biddingListServer.at(i).client2Wins += 1;
+                            }
+                        }
+
+                        biddingListServer.at(i).unitPrice = 1;
+                        biddingListServer.at(i).isAvailable = true;
+                        biddingListServer.at(i).currentWinner = 0;
+                        std::cout<<biddingListServer.at(i).itemName<<" Client1 Wins: "<<biddingListServer.at(i).client1Wins<<" Client2 Wins: "<<biddingListServer.at(i).client2Wins<<
+                                 " Client3 Wins: "<<biddingListServer.at(i).client3Wins<<" Client4 Wins: "<<biddingListServer.at(i).client4Wins<<std::endl;
+                        done = 0;
+                        alarm(SESSION_TIMER); // 1 minute timer for session
+                    }
+                }
+            }
 
         int numbytes;
         char buf[LENGTH];
@@ -194,7 +254,9 @@ int main(int argc, char * argv[])
                         biddingListServer.at(i).itemName + " " + std::to_string(biddingListServer.at(i).unitPrice)
                         + " " + std::to_string(biddingListServer.at(i).currentWinner) + "\n");
 
-            } else{
+            } else if(biddingListServer.at(i).isAvailable == true){
+
+                biddingListServer.at(i).isAvailable = false;
 
                 //increase client wins by 1
                 if(biddingListServer.at(i).currentWinner == 1)
@@ -215,8 +277,12 @@ int main(int argc, char * argv[])
                 }
                 biddingListServer.at(i).numUnits -= 1; //decrement item by 1
 
-                std::cout<<biddingListServer.at(i).itemName<<" Max Price Reached!, Winner: "<<biddingListServer.at(i).currentWinner
-                <<" "<<biddingListServer.at(i).numUnits<<std::endl;
+                std::cout<<biddingListServer.at(i).itemName<<" Max Price Reached!, Winner: "
+                <<biddingListServer.at(i).currentWinner<<std::endl;
+            }
+            else{
+                std::cout<<biddingListServer.at(i).itemName<<" Max Price Reached!, Winner: "
+                <<biddingListServer.at(i).currentWinner<<std::endl;
             }
         }
 

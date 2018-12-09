@@ -10,4 +10,5 @@ struct itemList{
       int client2Wins = 0;
       int client3Wins = 0;
       int client4Wins = 0;
+      bool isAvailable = true;
 };
