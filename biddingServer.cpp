@@ -15,6 +15,7 @@
 #include <sstream>
 #include <fstream>
 #include <csignal>
+#include <iomanip>
 
 #define MYPORT 3499    // the port users will be connecting to
 
@@ -22,7 +23,7 @@
 
 #define LENGTH 256
 
-#define SESSION_TIMER 60     //in seconds
+#define SESSION_TIMER 30     //in seconds
 
 std::sig_atomic_t volatile done = 0;
 void sessionOver(int) { done = 1; }
@@ -127,166 +128,207 @@ int main(int argc, char * argv[])
 
 
     while(1) {  // main accept() loop
-        sin_size = sizeof(struct sockaddr_in);
-        if ((new_fd = accept(sockfd, (struct sockaddr *)&their_addr,
-                             &sin_size)) == -1) {
-            perror("accept");
-            continue;
-        }
-        printf("server: got connection from %s\n",
-               inet_ntoa(their_addr.sin_addr));
-        if (!fork()) { // this is the child process
 
-            char sendBuffer[LENGTH];
 
-            int itemWithPriceLength = itemWithPrice.length();
-
-            if(itemWithPriceLength == 0)
-            {
-                std::cout<<"ERROR: No items found on server."<<std::endl;
-                exit(1);
+            sin_size = sizeof(struct sockaddr_in);
+            if ((new_fd = accept(sockfd, (struct sockaddr *) &their_addr,
+                                 &sin_size)) == -1) {
+                perror("accept");
+                continue;
             }
-            bzero(sendBuffer, LENGTH);
+            printf("server: got connection from %s\n",
+                   inet_ntoa(their_addr.sin_addr));
+            if (!fork()) { // this is the child process
 
-            close(sockfd); // child doesn't need the listener
+                char sendBuffer[LENGTH];
+
+                int itemWithPriceLength = itemWithPrice.length();
+
+                if (itemWithPriceLength == 0) {
+                    std::cout << "ERROR: No items found on server." << std::endl;
+                    exit(1);
+                }
+                bzero(sendBuffer, LENGTH);
+
+                close(sockfd); // child doesn't need the listener
 
 
-            for(int i = 0; i < itemWithPriceLength; i++)
-            {
-                sendBuffer[i] = itemWithPrice[i];
-            }
+                for (int i = 0; i < itemWithPriceLength; i++) {
+                    sendBuffer[i] = itemWithPrice[i];
+                }
 
-            if (send(new_fd, sendBuffer, itemWithPriceLength, 0) == -1)
-                perror("send");
-            bzero(sendBuffer, itemWithPriceLength);
+                if (send(new_fd, sendBuffer, itemWithPriceLength, 0) == -1)
+                    perror("send");
+                bzero(sendBuffer, itemWithPriceLength);
 
             close(new_fd);
 
             exit(0);
-        }
-        else                //I am a parent
+            }
+            else                //I am a parent
             {
                 bool allItemsGone = true;
-                for(int i = 0; i < biddingListServer.size();i++)
-                {
-                    if(biddingListServer.at(i).isAvailable)
-                    {
+                for (int i = 0; i < biddingListServer.size(); i++) {
+                    if (biddingListServer.at(i).isAvailable) {
                         allItemsGone = false;
                     }
                 }
 
-                if(done == 1 || allItemsGone)
-                {
-                    for(int i = 0; i < biddingListServer.size();i++)  //reset prices to $1
+                if (done == 1 || allItemsGone) {
+
+                    done = 0;
+                    alarm(3); // 2 second buffer timer
+
+                    while (!done) {
+                        //buffer after session ends
+                    }
+
+                    std::cout << "Name" << std::setw(6) << "C1" << std::setw(5) << "C2" << std::setw(5) << "C3"
+                              << std::setw(5) << "C4" << std::endl;
+                    std::cout << "-----------------------------" << std::endl;
+
+                    for (int i = 0; i < biddingListServer.size(); i++)  //reset prices to $1
                     {
 
-                        if(biddingListServer.at(i).isAvailable)
-                        {
+                        if (biddingListServer.at(i).isAvailable) {
                             biddingListServer.at(i).numUnits -= 1;
 
                             //increase client wins by 1
-                            if(biddingListServer.at(i).currentWinner == 1)
-                            {
+                            if (biddingListServer.at(i).currentWinner == 1) {
                                 biddingListServer.at(i).client1Wins += 1;
-                            }
-                            else if(biddingListServer.at(i).currentWinner == 2)
-                            {
+                            } else if (biddingListServer.at(i).currentWinner == 2) {
                                 biddingListServer.at(i).client2Wins += 1;
-                            }
-                            else if(biddingListServer.at(i).currentWinner == 3)
-                            {
-                                biddingListServer.at(i).client2Wins += 1;
-                            }
-                            else if(biddingListServer.at(i).currentWinner == 4)
-                            {
-                                biddingListServer.at(i).client2Wins += 1;
+                            } else if (biddingListServer.at(i).currentWinner == 3) {
+                                biddingListServer.at(i).client3Wins += 1;
+                            } else if (biddingListServer.at(i).currentWinner == 4) {
+                                biddingListServer.at(i).client4Wins += 1;
                             }
                         }
 
-                        biddingListServer.at(i).unitPrice = 1;
-                        biddingListServer.at(i).isAvailable = true;
-                        biddingListServer.at(i).currentWinner = 0;
-                        std::cout<<biddingListServer.at(i).itemName<<" Client1 Wins: "<<biddingListServer.at(i).client1Wins<<" Client2 Wins: "<<biddingListServer.at(i).client2Wins<<
-                                 " Client3 Wins: "<<biddingListServer.at(i).client3Wins<<" Client4 Wins: "<<biddingListServer.at(i).client4Wins<<std::endl;
-                        done = 0;
-                        alarm(SESSION_TIMER); // 1 minute timer for session
+                        if (biddingListServer.at(i).numUnits <= 0) {
+                            biddingListServer.at(i).isAvailable = false;
+                            biddingListServer.at(i).soldOut = true;
+                        } else {
+                            biddingListServer.at(i).isAvailable = true;
+                            biddingListServer.at(i).unitPrice = 1;
+                            biddingListServer.at(i).currentWinner = 0;
+                        }
+
+                        if (biddingListServer.at(i).itemName == "Item10")     //for formatting item 10
+                        {
+                            std::cout << biddingListServer.at(i).itemName << std::setw(4)
+                                      << biddingListServer.at(i).client1Wins << std::setw(5)
+                                      << biddingListServer.at(i).client2Wins << std::setw(5)
+                                      << biddingListServer.at(i).client3Wins << std::setw(5)
+                                      << biddingListServer.at(i).client4Wins << std::endl;
+                        } else {
+                            std::cout << biddingListServer.at(i).itemName << std::setw(5)
+                                      << biddingListServer.at(i).client1Wins << std::setw(5)
+                                      << biddingListServer.at(i).client2Wins << std::setw(5)
+                                      << biddingListServer.at(i).client3Wins << std::setw(5)
+                                      << biddingListServer.at(i).client4Wins << std::endl;
+                        }
+                    }
+
+                    done = 0;
+                    alarm(5); // 5 second buffer timer
+
+                    while (!done) {
+                        //buffer after session ends
+                    }
+
+                    done = 0;
+                    alarm(SESSION_TIMER); // 1 minute timer for session
+                }
+            }
+
+                    int numbytes;
+                    char buf[LENGTH];
+
+                    if ((numbytes = recv(new_fd, buf, LENGTH - 1, 0)) == -1) {
+                        perror("recv");
+                        exit(1);
+                    }
+
+                    buf[numbytes] = '\0';
+
+                    std::stringstream aLine;  //For the line
+                    aLine << buf;               //Bytes of data from the buffer into the string stream object
+
+                    std::string temp;         //For the line to cut up and store into our Struct
+                    while (aLine >> temp) {
+                        for (int i = 0; i < biddingListServer.size(); i++) {
+                            if (temp == biddingListServer.at(i).itemName) {
+                                aLine >> temp;
+                                biddingListServer.at(i).unitPrice = stoi(temp);
+                                aLine >> temp;
+                                biddingListServer.at(i).currentWinner = stoi(temp);
+                            }
+                        }
+                    }
+
+                itemWithPrice = "";
+
+                std::cout << "Name" << std::setw(7) << "Units" << std::setw(6) << "Price" << std::setw(5) << "Max"
+                          << std::setw(7) << "HiBid" << std::endl;
+                std::cout << "-----------------------------" << std::endl;
+
+                for (int i = 0; i < biddingListServer.size(); i++) { //Print the vector to see that it saves right
+
+                    if (biddingListServer.at(i).soldOut == false) //if item is sold out skip item
+                    {
+
+                        if (biddingListServer.at(i).unitPrice < biddingListServer.at(i).maxUnitPrice &&
+                            biddingListServer.at(i).isAvailable == true) {
+
+                            if (biddingListServer.at(i).itemName ==
+                                "Item10")       //Just for formatting cout for item10
+                            {
+                                std::cout << biddingListServer.at(i).itemName << std::setw(4)
+                                          << biddingListServer.at(i).numUnits << std::setw(5) <<
+                                          biddingListServer.at(i).unitPrice << std::setw(7)
+                                          << biddingListServer.at(i).maxUnitPrice << std::setw(5)
+                                          << biddingListServer.at(i).currentWinner << std::endl;
+                            } else {
+                                std::cout << biddingListServer.at(i).itemName << std::setw(5)
+                                          << biddingListServer.at(i).numUnits << std::setw(5) <<
+                                          biddingListServer.at(i).unitPrice << std::setw(7)
+                                          << biddingListServer.at(i).maxUnitPrice << std::setw(5)
+                                          << biddingListServer.at(i).currentWinner << std::endl;
+                            }
+
+                            itemWithPrice.append(
+                                    biddingListServer.at(i).itemName + " " +
+                                    std::to_string(biddingListServer.at(i).unitPrice)
+                                    + " " + std::to_string(biddingListServer.at(i).currentWinner) + "\n");
+
+                        } else if (biddingListServer.at(i).unitPrice == biddingListServer.at(i).maxUnitPrice &&
+                                   biddingListServer.at(i).isAvailable == true) {
+
+                            biddingListServer.at(i).isAvailable = false;
+
+                            //increase client wins by 1
+                            if (biddingListServer.at(i).currentWinner == 1) {
+                                biddingListServer.at(i).client1Wins += 1;
+                            } else if (biddingListServer.at(i).currentWinner == 2) {
+                                biddingListServer.at(i).client2Wins += 1;
+                            } else if (biddingListServer.at(i).currentWinner == 3) {
+                                biddingListServer.at(i).client3Wins += 1;
+                            } else if (biddingListServer.at(i).currentWinner == 4) {
+                                biddingListServer.at(i).client4Wins += 1;
+                            }
+                            biddingListServer.at(i).numUnits -= 1; //decrement item by 1
+
+                            std::cout << biddingListServer.at(i).itemName << " Max Price Reached!, Winner: "
+                                      << biddingListServer.at(i).currentWinner << std::endl;
+                        } else {
+                            std::cout << biddingListServer.at(i).itemName << " Max Price Reached!, Winner: "
+                                      << biddingListServer.at(i).currentWinner << std::endl;
+                        }
                     }
                 }
-            }
 
-        int numbytes;
-        char buf[LENGTH];
-
-        if ((numbytes=recv(new_fd, buf, LENGTH-1, 0)) == -1) {
-            perror("recv");
-            exit(1);
-        }
-
-        buf[numbytes] = '\0';
-
-        std::stringstream aLine;  //For the line
-        aLine<<buf;               //Bytes of data from the buffer into the string stream object
-
-        std::string temp;         //For the line to cut up and store into our Struct
-        while(aLine>>temp){
-            for(int i = 0; i < biddingListServer.size();i++)
-            {
-                if(temp == biddingListServer.at(i).itemName)
-                {
-                    aLine>>temp;
-                    biddingListServer.at(i).unitPrice = stoi(temp);
-                    aLine>>temp;
-                    biddingListServer.at(i).currentWinner = stoi(temp);
-                }
-            }
-        }
-
-        itemWithPrice = "";
-
-        for(int i = 0; i < biddingListServer.size();i++){ //Print the vector to see that it saves right
-
-            if(biddingListServer.at(i).unitPrice != biddingListServer.at(i).maxUnitPrice) {
-
-                std::cout << biddingListServer.at(i).itemName << " " << biddingListServer.at(i).numUnits << " " <<
-                biddingListServer.at(i).unitPrice<< " " <<biddingListServer.at(i).maxUnitPrice << std::endl;
-
-                itemWithPrice.append(
-                        biddingListServer.at(i).itemName + " " + std::to_string(biddingListServer.at(i).unitPrice)
-                        + " " + std::to_string(biddingListServer.at(i).currentWinner) + "\n");
-
-            } else if(biddingListServer.at(i).isAvailable == true){
-
-                biddingListServer.at(i).isAvailable = false;
-
-                //increase client wins by 1
-                if(biddingListServer.at(i).currentWinner == 1)
-                {
-                    biddingListServer.at(i).client1Wins += 1;
-                }
-                else if(biddingListServer.at(i).currentWinner == 2)
-                {
-                    biddingListServer.at(i).client2Wins += 1;
-                }
-                else if(biddingListServer.at(i).currentWinner == 3)
-                {
-                    biddingListServer.at(i).client2Wins += 1;
-                }
-                else if(biddingListServer.at(i).currentWinner == 4)
-                {
-                    biddingListServer.at(i).client2Wins += 1;
-                }
-                biddingListServer.at(i).numUnits -= 1; //decrement item by 1
-
-                std::cout<<biddingListServer.at(i).itemName<<" Max Price Reached!, Winner: "
-                <<biddingListServer.at(i).currentWinner<<std::endl;
-            }
-            else{
-                std::cout<<biddingListServer.at(i).itemName<<" Max Price Reached!, Winner: "
-                <<biddingListServer.at(i).currentWinner<<std::endl;
-            }
-        }
-
-        close(new_fd);  // parent doesn't need this
+            close(new_fd);  // parent doesn't need this
     }
 
     return 0;

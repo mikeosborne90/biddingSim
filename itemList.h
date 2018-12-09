@@ -11,4 +11,5 @@ struct itemList{
       int client3Wins = 0;
       int client4Wins = 0;
       bool isAvailable = true;
+      bool soldOut = false;
 };
