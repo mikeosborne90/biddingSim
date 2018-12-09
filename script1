@@ -1,6 +1,6 @@
 #!/bin/bash
 
  while [  true ]; do
-     ./client1 Unfazed90
+     ./client1 73.90.188.39
      sleep .1
  done
