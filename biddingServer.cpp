@@ -75,8 +75,8 @@ int main(int argc, char * argv[])
         for (int i = 0; i < biddingListServer.size(); i++) { //Print the vector to see that it saves right
             //std::cout << biddingListServer.at(i).itemName << " " << biddingListServer.at(i).numUnits << " " << biddingListServer.at(i).unitPrice<< " " << biddingListServer.at(i).maxUnitPrice << std::endl;
             itemWithPrice.append(
-                    biddingListServer.at(i).itemName + " " + std::to_string(biddingListServer.at(i).unitPrice) +
-                    "\n");
+                    biddingListServer.at(i).itemName + " " + std::to_string(biddingListServer.at(i).unitPrice)
+                    + " " + std::to_string(biddingListServer.at(i).currentWinner) + "\n");
         }
         bzero(buffer, LENGTH);
     }
@@ -175,27 +175,50 @@ int main(int argc, char * argv[])
                 {
                     aLine>>temp;
                     biddingListServer.at(i).unitPrice = stoi(temp);
+                    aLine>>temp;
+                    biddingListServer.at(i).currentWinner = stoi(temp);
                 }
             }
         }
 
-//        std::ofstream out("biddingList.txt", std::ios::out);
-//
-//        if( !out )
-//        {
-//            std::cout << "Couldn't open file."  << std::endl;
-//            return 1;
-//        }
-
         itemWithPrice = "";
 
         for(int i = 0; i < biddingListServer.size();i++){ //Print the vector to see that it saves right
-            //out << biddingListServer.at(i).itemName << " " << biddingListServer.at(i).numUnits << " " << biddingListServer.at(i).unitPrice<< " " << biddingListServer.at(i).maxUnitPrice << std::endl;
-            std::cout << biddingListServer.at(i).itemName << " " << biddingListServer.at(i).numUnits << " " << biddingListServer.at(i).unitPrice<< " " << biddingListServer.at(i).maxUnitPrice << std::endl;
-            itemWithPrice.append(biddingListServer.at(i).itemName + " " + std::to_string(biddingListServer.at(i).unitPrice) + "\n");
-        }
 
-//        out.close();
+            if(biddingListServer.at(i).unitPrice != biddingListServer.at(i).maxUnitPrice) {
+
+                std::cout << biddingListServer.at(i).itemName << " " << biddingListServer.at(i).numUnits << " " <<
+                biddingListServer.at(i).unitPrice<< " " <<biddingListServer.at(i).maxUnitPrice << std::endl;
+
+                itemWithPrice.append(
+                        biddingListServer.at(i).itemName + " " + std::to_string(biddingListServer.at(i).unitPrice)
+                        + " " + std::to_string(biddingListServer.at(i).currentWinner) + "\n");
+
+            } else{
+
+                //increase client wins by 1
+                if(biddingListServer.at(i).currentWinner == 1)
+                {
+                    biddingListServer.at(i).client1Wins += 1;
+                }
+                else if(biddingListServer.at(i).currentWinner == 2)
+                {
+                    biddingListServer.at(i).client2Wins += 1;
+                }
+                else if(biddingListServer.at(i).currentWinner == 3)
+                {
+                    biddingListServer.at(i).client2Wins += 1;
+                }
+                else if(biddingListServer.at(i).currentWinner == 4)
+                {
+                    biddingListServer.at(i).client2Wins += 1;
+                }
+                biddingListServer.at(i).numUnits -= 1; //decrement item by 1
+
+                std::cout<<biddingListServer.at(i).itemName<<" Max Price Reached!, Winner: "<<biddingListServer.at(i).currentWinner
+                <<" "<<biddingListServer.at(i).numUnits<<std::endl;
+            }
+        }
 
         close(new_fd);  // parent doesn't need this
     }

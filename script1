@@ -1,0 +1,6 @@
+#!/bin/bash
+
+ while [  true ]; do
+     ./client1 Unfazed90
+     sleep .1
+ done
