@@ -12,6 +12,7 @@
 #include <iostream>
 #include <vector>
 #include <time.h>
+#include <sys/time.h>
 
 #define PORT 3499 // the port client will be connecting to
 
@@ -23,7 +24,10 @@ int main(int argc, char *argv[])
     char buf[MAXDATASIZE];
     struct hostent *he;
     struct sockaddr_in _addr; // connector's address information
-    srand (time(NULL));
+    timeval t1;
+    gettimeofday(&t1, NULL);
+    srand(t1.tv_usec * t1.tv_sec);          //random number generated in microseconds not seconds
+    std::string itemWithPrice = "";         //stores item name, and unitPrice
 
     if (argc != 2) {
         fprintf(stderr,"usage: client hostname\n");
@@ -57,7 +61,6 @@ int main(int argc, char *argv[])
     }
 
     buf[numbytes] = '\0';
-    std::string itemWithPrice;         //stores item name, and unitPrice
 
     std::stringstream aLine;  //For the line
     aLine<<buf;               //Bytes of data from the buffer into the string stream object
@@ -68,15 +71,15 @@ int main(int argc, char *argv[])
     itemList tempElement;
     std::string temp;         //For the line to cut up and store into our Struct
     while(aLine>>temp){
-      tempElement.itemName = temp;          //Store the first part of line, Description as name
-      aLine>>temp;                          //Skip over tabs, store new data in Temp(The units now)
-      tempElement.unitPrice = stoi(temp);   //Store the price of each unit, don't get next because that starts next line
-      biddingListClient.push_back(tempElement);   //Store element into our vector of itemList
+        tempElement.itemName = temp;          //Store the first part of line, Description as name
+        aLine>>temp;                          //Skip over tabs, store new data in Temp(The units now)
+        tempElement.unitPrice = stoi(temp);   //Store the price of each unit, don't get next because that starts next line
+        biddingListClient.push_back(tempElement);   //Store element into our vector of itemList
     }
     //This forloop shows how to iterate through the vector and access each member of the structure
     //Should make it easier to broadcast itemName, edit the number of units and price
     for(int i = 0; i < biddingListClient.size();i++){ //Print the vector to see that it saves right
-      std::cout << biddingListClient.at(i).itemName << " " << biddingListClient.at(i).unitPrice << std::endl;
+        std::cout << biddingListClient.at(i).itemName << " " << biddingListClient.at(i).unitPrice << std::endl;
     }
 
     int randomItem = rand() % 10; //Need to change once item list gets reduced in size
@@ -96,7 +99,7 @@ int main(int argc, char *argv[])
                         "\n");
                 std::cout<<"Bid on "<<biddingListClient.at(i).itemName<<" "<<biddingListClient.at(i).unitPrice + 1<<std::endl;
             }
-    }
+        }
     }
     else {                                                      //30% chance to not bid
         std::cout << "Did not bid this round!" << std::endl;

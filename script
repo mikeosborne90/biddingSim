@@ -1,5 +1,5 @@
 #!/bin/bash
 
  while [  true ]; do
-     ./client 73.235.196.112
+     ./client Unfazed90
  done
