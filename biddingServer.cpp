@@ -149,7 +149,7 @@ int main(void)
                 int itemWithPriceLength = itemWithPrice.length();
 
                 if (itemWithPriceLength == 0) {
-                    std::cout << "ERROR: No items found on server." << std::endl;
+                    std::cout << "No items available." << std::endl;
                     exit(1);
                 }
 
