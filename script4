@@ -1,0 +1,7 @@
+#!/bin/bash
+
+ while [  true ]; do
+     #./client4 73.90.188.39
+     ./client4 Unfazed90
+     sleep .3
+ done
