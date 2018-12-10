@@ -3,5 +3,5 @@
  while [  true ]; do
      #./client1 73.90.188.39
      ./client1 Unfazed90
-     sleep .1
+     sleep .3
  done

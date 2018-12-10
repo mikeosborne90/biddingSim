@@ -1,3 +1,9 @@
+//Client receives item list
+//Randomly chooses item to bid on (increase price by $1)
+//30% chance to not bid
+//If random item is item where client is highest bidder skip bidding
+//Sends Item Name, New Price, Client#(1-4) back to server
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -23,7 +29,8 @@ int main(int argc, char *argv[])
     int sockfd, numbytes;
     char buf[MAXDATASIZE];
     struct hostent *he;
-    struct sockaddr_in _addr; // connector's address information
+    struct sockaddr_in _addr;               //connector's address information
+
     timeval t1;
     gettimeofday(&t1, NULL);
     srand(t1.tv_usec * t1.tv_sec);          //random number generated in microseconds not seconds
@@ -62,20 +69,19 @@ int main(int argc, char *argv[])
 
     buf[numbytes] = '\0';
 
-    std::stringstream aLine;  //For the line
-    aLine<<buf;               //Bytes of data from the buffer into the string stream object
+    std::stringstream aLine;                        //For the line
+    aLine<<buf;                                     //Bytes of data from the buffer into the string stream object
 
-    //printf("Received: \n%s",aLine.str().c_str()); // Printing what we have stored in the stringstream(commented out for testing)
     std::vector<itemList> biddingListClient;
     biddingListClient.clear();
     itemList tempElement;
-    std::string temp;         //For the line to cut up and store into our Struct
-    int count = 0;            //keep track of # items in list
+    std::string temp;                              //For the line to cut up and store into our Struct
+    int count = 0;                                 //keep track of # items in list
 
     while(aLine>>temp){
-        tempElement.itemName = temp;          //Store the first part of line, Description as name
-        aLine>>temp;                          //Skip over tabs, store new data in Temp(The units now)
-        tempElement.unitPrice = stoi(temp);   //Store the price of each unit, don't get next because that starts next line
+        tempElement.itemName = temp;               //Store the first part of line, Description as name
+        aLine>>temp;                               //Skip over tabs, store new data in Temp(The units now)
+        tempElement.unitPrice = stoi(temp);        //Store the price of each unit, don't get next because that starts next line
         aLine>>temp;
         tempElement.currentWinner = stoi(temp);
         biddingListClient.push_back(tempElement);   //Store element into our vector of itemList
@@ -87,7 +93,7 @@ int main(int argc, char *argv[])
         std::cout << biddingListClient.at(i).itemName << " " << biddingListClient.at(i).unitPrice << std::endl;
     }
 
-    int randomItem = rand() % count; //Based on # of items in list.
+    int randomItem = rand() % count;                             //Based on # of items in list.
     int notBidChance = rand() % 100;
     char sendBuffer[MAXDATASIZE];
 
@@ -96,9 +102,9 @@ int main(int argc, char *argv[])
         for (int i = 0; i < biddingListClient.size(); i++)
         {
 
-            if (randomItem == i)                            //randomly add one item to list
+            if (randomItem == i)                                 //randomly add one item to list
             {
-                if(biddingListClient.at(i).currentWinner == 1)  //already highest bidder
+                if(biddingListClient.at(i).currentWinner == 1)   //already highest bidder
                 {
                     std::cout << "Did not bid this round! Highest Bidder!" << std::endl;
                 }
@@ -114,7 +120,7 @@ int main(int argc, char *argv[])
             }
         }
     }
-    else {                                                      //30% chance to not bid
+    else {                                                       //30% chance to not bid
         std::cout << "Did not bid this round!" << std::endl;
     }
 
@@ -122,6 +128,7 @@ int main(int argc, char *argv[])
     {
         sendBuffer[i] = itemWithPrice[i];
     }
+
 //Trying to send back to server
     if(numbytes == 0)
     {
