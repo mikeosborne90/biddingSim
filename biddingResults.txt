@@ -1,12 +1,12 @@
 Name    C1   C2   C3   C4
 -----------------------------
-Item1    2    0    0    0
-Item2    1    0    0    1
-Item3    1    0    1    0
-Item4    1    0    0    1
-Item5    0    1    0    1
-Item6    0    1    1    0
-Item7    1    0    0    1
-Item8    0    0    1    1
-Item9    1    1    0    0
-Item10   0    0    1    1
+Item1    4    5    5    6
+Item2   14    6    7   15
+Item3    6    6    5    7
+Item4   20   23   26   30
+Item5   25   18   18   13
+Item6   11   14   11   10
+Item7    5   11   10    6
+Item8   27   30   23   19
+Item9   18   28   15   24
+Item10  19   16   23   13
