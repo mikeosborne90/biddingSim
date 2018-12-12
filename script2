@@ -1,7 +1,7 @@
 #!/bin/bash
 
  while [  true ]; do
-     #./client2 73.90.188.39
-     ./client2 Unfazed90
-     sleep .3
+     ./client2 129.8.237.249
+     #./client2 Unfazed90
+     sleep .1
  done
